@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Mapa Geográfico - Emancipación de Hispanoamérica</title>
+    <!-- Leaflet CSS + JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #e2d5c2;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            padding: 20px;
+        }
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: #fffaf2;
+            border-radius: 32px;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: #2e241a;
+            color: #f5e7d9;
+            padding: 1rem 2rem;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 1.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .header p {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+        .content-row {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .map-wrapper {
+            flex: 3;
+            min-width: 280px;
+            padding: 20px;
+        }
+        #map {
+            height: 580px;
+            border-radius: 28px;
+            border: 2px solid #d6c5ae;
+            background: #e6dccf;
+        }
+        .timeline-side {
+            flex: 1.2;
+            min-width: 260px;
+            background: #fdf7ef;
+            margin: 20px 20px 20px 0;
+            border-radius: 28px;
+            padding: 1rem;
+            max-height: 580px;
+            overflow-y: auto;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .timeline-side h3 {
+            border-left: 5px solid #b87c3a;
+            padding-left: 12px;
+            margin-bottom: 1rem;
+            color: #4a2e18;
+        }
+        .timeline-event {
+            margin-bottom: 0.8rem;
+            padding: 0.6rem;
+            background: white;
+            border-radius: 18px;
+            cursor: pointer;
+            border: 1px solid #eedfcb;
+            transition: 0.1s;
+        }
+        .timeline-event:hover {
+            background: #f1e6d8;
+            transform: translateX(4px);
+        }
+        .timeline-event .year { font-weight: 800; color: #c5762e; font-size: 0.8rem; }
+        .timeline-event .title { font-weight: 600; font-size: 0.85rem; }
+        .analysis-footer {
+            background: #efe3d4;
+            margin: 0 20px 20px 20px;
+            border-radius: 28px;
+            padding: 1.5rem;
+        }
+        .analysis-footer h3 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #5c381c;
+        }
+        .valoracion {
+            background: #fff6ea;
+            padding: 1rem;
+            border-radius: 20px;
+            margin-top: 1rem;
+        }
+        footer {
+            text-align: center;
+            font-size: 0.7rem;
+            padding: 1rem;
+            background: #e2d4c2;
+        }
+        @media (max-width: 780px) {
+            .content-row { flex-direction: column; }
+            .timeline-side { margin: 0 20px 20px 20px; max-height: 300px; }
+        }
+        .custom-popup .popup-title {
+            font-weight: 800;
+            font-size: 1rem;
+            color: #b45f2a;
+            border-bottom: 1px solid #e2cbaa;
+        }
+    </style>
+</head>
+<body>
+<div class="main-container">
+    <div class="header">
+        <h1><i class="fas fa-map-marked-alt"></i> Mapa Geográfico: Emancipación de Hispanoamérica</h1>
+        <p>Secuencia temporal, personajes, lugares, causas y consecuencias | Clic en cada marcador para más información</p>
+    </div>
+    <div class="content-row">
+        <div class="map-wrapper">
+            <div id="map"></div>
+            <div style="font-size:0.7rem; text-align:center; margin-top:6px;"><i class="fas fa-mouse-pointer"></i> Haz clic en los marcadores para ver fechas, personajes, ideas y análisis causal.</div>
+        </div>
+        <div class="timeline-side">
+            <h3><i class="fas fa-timeline"></i> Línea cronológica</h3>
+            <div id="timeline-list"></div>
+            <div style="margin-top:15px; background:#e9dccc; border-radius:16px; padding:8px; font-size:0.7rem;">
+                <i class="fas fa-globe"></i> Líneas punteadas: rutas de campañas independentistas (Bolívar, San Martín)
+            </div>
+        </div>
+    </div>
+    <div class="analysis-footer">
+        <h3><i class="fas fa-history"></i> Análisis del proceso independentista</h3>
+        <p><strong>Causas:</strong> Reformas borbónicas (centralismo, intendentes, expulsión jesuitas 1767, Reglamento de Libre Comercio 1778), descontento criollo, influencia de la Ilustración (Independencia de EE.UU. 1783, Revolución Francesa 1789, Revolución haitiana). Invasiones inglesas a Buenos Aires (1806-1807). Vacío de poder en España (1808) por la invasión napoleónica, que lleva a la formación de juntas.<br>
+        <strong>Desarrollo:</strong> Juntas americanas (1810), Grito de Dolores (1810), Independencia de Venezuela (1811), Campaña Admirable (1813), caída de Miranda, restauración de Fernando VII (1814) y represión de Morillo, Independencia de Paraguay (1813), Independencia de Argentina (1816), Cruce de los Andes y liberación de Chile (1817-1818), Congreso de Angostura y Gran Colombia (1819), Batalla de Boyacá (1819), sublevación de Riego (1820) que impide la reconquista, armisticio de Trujillo. El proceso fue una guerra civil liderada por oligarquías criollas.</p>
+        <div class="valoracion">
+            <i class="fas fa-star-of-life"></i> <strong>Valoración:</strong> La emancipación fue un proceso contradictorio: las élites criollas aprovecharon el colapso de la monarquía española para obtener poder, usando ideas ilustradas y apoyo británico, pero marginaron a las mayorías populares. Figuras como Bolívar y San Martín fueron estratégicos, mientras que líderes populares como Hidalgo y Morelos fueron derrotados inicialmente. El resultado fue la independencia política, pero persistieron profundas desigualdades.
+        </div>
+    </div>
+    <footer><i class="fas fa-check-double"></i> Mapa con todos los eventos clave. Cada marcador contiene información extraída del material de referencia.</footer>
+</div>
+
+<script>
+    // --------------------------------------------------------------
+    // TODOS LOS EVENTOS SEGÚN EL DOCUMENTO (reformas, invasiones, batallas, congresos, etc.)
+    // --------------------------------------------------------------
+    const eventos = [
+        { id:1, titulo:"Expulsión de los jesuitas", fecha:"1767", lugar:"Territorios americanos", coords:[19.4326,-99.1332], descripcion:"Carlos III decreta la disolución de la Compañía de Jesús. Los jesuitas americanos deben salir. La corona se gana enemigos en la élite intelectual criolla.", personajes:"Carlos III", ideas:"Los jesuitas habían hecho obras sociales importantes; su expulsión aumenta el descontento criollo." },
+        { id:2, titulo:"Reglamento de Libre Comercio", fecha:"1778", lugar:"España y puertos americanos", coords:[40.4168,-3.7038], descripcion:"Carlos III promulga el Reglamento de Libre Comercio, abriendo principales puertos de España e Indias. Flexibiliza el monopolio, aumenta el comercio aunque aún parcial.", personajes:"Carlos III", ideas:"Medida para calmar a los criollos comerciantes, pero el contrabando seguía existiendo." },
+        { id:3, titulo:"Independencia de las 13 Colonias", fecha:"1783", lugar:"Estados Unidos", coords:[38.9072,-77.0369], descripcion:"Tratado de paz que pone fin a la guerra entre EE.UU. e Inglaterra. Episodio que influye ideológicamente en los criollos hispanoamericanos.", personajes:"--", ideas:"Modelo de independencia y republicanismo. Uno de los tres grandes precedentes ilustrados." },
+        { id:4, titulo:"Revolución Francesa", fecha:"1789", lugar:"Francia", coords:[48.8566,2.3522], descripcion:"Inicio de la Revolución Francesa. Las ideas de libertad e igualdad calan en la oligarquía criolla.", personajes:"--", ideas:"Armazón ideológico para la emancipación." },
+        { id:5, titulo:"Revolución Haitiana", fecha:"1791-1804", lugar:"Haití", coords:[18.5944,-72.3074], descripcion:"Revolución de esclavos en la colonia francesa de Haití, logran su independencia. Inspira temor y esperanza en América.", personajes:"--", ideas:"Tercer gran precedente ilustrado. Impacta a los criollos." },
+        { id:6, titulo:"Pacto Francia-España contra Inglaterra", fecha:"1796", lugar:"Europa", coords:[40.4168,-3.7038], descripcion:"Francia y España unen fuerzas contra Inglaterra. En 1797 se demuestra la debilidad de la coalición. España liberaliza parcialmente el comercio con neutrales.", personajes:"Carlos IV", ideas:"España termina permitiendo comercio con potencias neutrales, medida que luego cancela." },
+        { id:7, titulo:"Batalla de Trafalgar", fecha:"1805", lugar:"Cádiz, España", coords:[36.5164,-6.2996], descripcion:"Famosa batalla naval. Franceses y españoles vs. armada británica de Horacio Nelson. Victoria británica, Nelson muere. Gran Bretaña confirma dominio de los mares, dificultando el comercio americano.", personajes:"Horacio Nelson", ideas:"Los productos americanos tienen problemas para llegar a la península." },
+        { id:8, titulo:"Real Cédula de Consolidación de Vales", fecha:"1804", lugar:"España y América", coords:[19.4326,-99.1332], descripcion:"Se enajenan bienes raíces de la Iglesia para costear la guerra con Inglaterra. Afecta agricultura, minería, comercio. En Nueva España protestan.", personajes:"Carlos IV", ideas:"Desamortización que causa malestar en sectores productivos." },
+        { id:9, titulo:"Expediciones de Miranda a Venezuela", fecha:"1806", lugar:"La Guaira, Venezuela", coords:[10.6000,-66.9333], descripcion:"Francisco de Miranda, con apoyo británico y estadounidense, lanza expediciones de liberación a Venezuela, pero no despiertan interés popular y son repelidas. Miranda huye a Inglaterra.", personajes:"Francisco de Miranda", ideas:"El 'Precursor' intenta independencia pero fracasa." },
+        { id:10, titulo:"Primera Invasión Inglesa", fecha:"1806", lugar:"Buenos Aires", coords:[-34.6037,-58.3816], descripcion:"Tropas británicas ocupan Buenos Aires pero son vencidas 46 días después por ejército desde Montevideo comandado por Santiago de Liniers.", personajes:"Santiago de Liniers", ideas:"Demuestra debilidad del imperio y descontento local." },
+        { id:11, titulo:"Segunda Invasión Inglesa", fecha:"1807", lugar:"Montevideo y Buenos Aires", coords:[-34.9011,-56.1645], descripcion:"Tropas británicas toman Montevideo, luego son rechazadas al intentar ocupar Buenos Aires.", personajes:"--", ideas:"Refuerza el sentimiento autonomista criollo." },
+        { id:12, titulo:"Vacío de poder en España", fecha:"1808", lugar:"España", coords:[40.4168,-3.7038], descripcion:"Carlos IV y Fernando VII traicionan a los españoles y entregan el país a Napoleón. Guerra de Independencia española contra los franceses. Se forman juntas. Hispanoamérica ve una oportunidad.", personajes:"Carlos IV, Fernando VII, Napoleón", ideas:"Detonante final para el proceso emancipador." },
+        { id:13, titulo:"Grito de Dolores", fecha:"16 septiembre 1810", lugar:"Dolores, Nueva España", coords:[21.1585,-100.9326], descripcion:"El cura Miguel Hidalgo da el grito e inicia la independencia de México. Obtiene victorias, pero fracasa y es fusilado. Luego Morelos (1813) también fracasa.", personajes:"Miguel Hidalgo, José María Morelos", ideas:"Excepción: levantamiento popular no criollo. Los criollos no lo apoyan." },
+        { id:14, titulo:"Independencia de Venezuela", fecha:"5 julio 1811", lugar:"Caracas", coords:[10.4806,-66.9036], descripcion:"Congreso de Caracas proclama independencia de las Provincias Unidas de Venezuela, constitución federal. Miranda y Bolívar. Poco después realistas vencen. Miranda entregado a españoles por Bolívar.", personajes:"Francisco Miranda, Simón Bolívar", ideas:"Primera república venezolana. Masonería clave (Logia Lautaro)." },
+        { id:15, titulo:"Campaña Admirable y Título de Libertador", fecha:"6 agosto 1813", lugar:"Caracas", coords:[10.4806,-66.9036], descripcion:"Bolívar inicia campaña desde Cúcuta, decreta 'Guerra a Muerte', entra triunfante en Caracas y recibe el título de Libertador. Luego es derrotado por Boves.", personajes:"Simón Bolívar, José Tomás Boves", ideas:"'Guerra a Muerte' causa terror; Bolívar huye." },
+        { id:16, titulo:"Independencia de Paraguay", fecha:"finales 1813", lugar:"Asunción", coords:[-25.2637,-57.5759], descripcion:"La Intendencia de Paraguay logra independencia definitiva. Un año después Rodríguez de Francia se convierte en dictador.", personajes:"Rodríguez de Francia", ideas:"Proceso exitoso temprano." },
+        { id:17, titulo:"Restauración de Fernando VII y represión", fecha:"1814", lugar:"España / América", coords:[40.4168,-3.7038], descripcion:"Fin de la guerra contra Francia. Fernando VII vuelve al absolutismo, envía a Pablo Morillo con 10.000 hombres a pacificar Venezuela y Nueva Granada.", personajes:"Fernando VII, Pablo Morillo", ideas:"Segunda república de Venezuela sentenciada. Bolívar se refugia en Jamaica y Haití." },
+        { id:18, titulo:"Independencia de Argentina", fecha:"1816", lugar:"San Miguel de Tucumán", coords:[-26.8241,-65.2226], descripcion:"Asamblea declara la independencia de las Provincias Unidas del Río de la Plata. Surge José de San Martín.", personajes:"José de San Martín", ideas:"San Martín, veterano de Bailén, planea liberar Chile y Perú." },
+        { id:19, titulo:"Cruce de los Andes y Batalla de Chacabuco", fecha:"enero 1817", lugar:"Cordillera de los Andes / Chile", coords:[-33.4489,-70.6693], descripcion:"San Martín cruza los Andes, derrota a realistas en Chacabuco. Toma Santiago. En 1818 vence en Maipú, consolidando independencia de Chile.", personajes:"José de San Martín, Bernardo O'Higgins", ideas:"Plan continental: Chile liberado, próximo objetivo Perú." },
+        { id:20, titulo:"Resurgimiento patriota con Manuel Piar", fecha:"1816", lugar:"Guayana venezolana", coords:[7.6222,-61.7031], descripcion:"Manuel Piar lidera resurgimiento independentista. Bolívar recela de él y lo hace fusilar en Angostura para afirmar su autoridad.", personajes:"Manuel Piar, Simón Bolívar", ideas:"Bolívar elimina rivales internos." },
+        { id:21, titulo:"Congreso de Angostura y Gran Colombia", fecha:"febrero 1819", lugar:"Angostura (hoy Ciudad Bolívar)", coords:[8.1292,-63.5409], descripcion:"Bolívar consolida poder, proyecta la Gran Colombia (Colombia, Venezuela, Panamá, Ecuador). Es nombrado presidente.", personajes:"Simón Bolívar, Francisco de Paula Santander", ideas:"Nace la República de Colombia como tributo a Colón." },
+        { id:22, titulo:"Batalla de Boyacá", fecha:"7 agosto 1819", lugar:"Boyacá, Nueva Granada", coords:[5.4535,-73.3623], descripcion:"Bolívar y Santander vencen a realistas en el puente de Boyacá. Liberan Santafé de Bogotá, capital del virreinato.", personajes:"Simón Bolívar, Francisco de Paula Santander", ideas:"Victoria decisiva que abre paso a la unión con Venezuela." },
+        { id:23, titulo:"Batalla de La Puerta", fecha:"1818", lugar:"La Puerta, Venezuela", coords:[9.8667,-67.4167], descripcion:"Bolívar intenta tomar Caracas, pero Morillo con refuerzos disuelve sus filas. Bolívar huye.", personajes:"Simón Bolívar, Pablo Morillo", ideas:"Fracaso del último intento de tomar Caracas en ese período." },
+        { id:24, titulo:"Sublevación de Rafael del Riego", fecha:"1 enero 1820", lugar:"España", coords:[36.5298,-6.2927], descripcion:"Rafael del Riego se levanta contra Fernando VII y lo obliga a jurar la Constitución de Cádiz. El gran ejército de reconquista (20.000 soldados) nunca llega a América.", personajes:"Rafael del Riego, Fernando VII", ideas:"Cambio político que sella la independencia americana." },
+        { id:25, titulo:"Armisticio de Trujillo", fecha:"noviembre 1820", lugar:"Trujillo, Venezuela", coords:[9.3647,-70.4336], descripcion:"Morillo y Bolívar firman un tratado de armisticio entre la Gran Colombia y España. Bolívar luego lo viola tomando Maracaibo.", personajes:"Pablo Morillo, Simón Bolívar", ideas:"Preparación para el golpe final independentista." }
+    ];
+
+    // Inicializar mapa
+    const map = L.map('map').setView([-15, -65], 4);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; CartoDB',
+        maxZoom: 18
+    }).addTo(map);
+
+    const customIcon = L.divIcon({
+        html: '<i class="fas fa-map-pin" style="font-size: 28px; color: #b87333; text-shadow: 0 0 2px white;"></i>',
+        iconSize: [28, 28],
+        popupAnchor: [0, -12],
+        className: 'custom-marker'
+    });
+
+    const markersRef = {};
+
+    eventos.forEach(ev => {
+        const popupContent = `
+            <div class="custom-popup" style="min-width: 260px; max-width: 300px;">
+                <div class="popup-title"><i class="fas fa-calendar-alt"></i> ${ev.fecha} · ${ev.titulo}</div>
+                <div><i class="fas fa-map-marker-alt"></i> <strong>${ev.lugar}</strong></div>
+                <div style="margin-top:6px;">${ev.descripcion}</div>
+                <div style="margin-top:6px;"><i class="fas fa-users"></i> <strong>Personajes:</strong> ${ev.personajes}</div>
+                <div style="margin-top:4px;"><i class="fas fa-lightbulb"></i> <strong>Ideas / Causas:</strong> ${ev.ideas}</div>
+                <div style="margin-top:6px; border-top:1px solid #e7cfb5; padding-top:4px;"><i class="fas fa-link"></i> Conexión causal con el proceso emancipador.</div>
+            </div>
+        `;
+        const marker = L.marker(ev.coords, { icon: customIcon }).addTo(map);
+        marker.bindPopup(popupContent, { maxWidth: 320 });
+        markersRef[ev.id] = { marker, coords: ev.coords };
+    });
+
+    // Marcador de antecedentes adicionales
+    const antMarker = L.marker([-34.6037,-58.3816], { icon: L.divIcon({ html: '<i class="fas fa-flag-checkered" style="font-size:24px; color:#8b5a2b;"></i>', iconSize: [24,24] }) }).addTo(map);
+    antMarker.bindPopup(`
+        <div style="font-weight:bold;">📜 Antecedentes contextuales</div>
+        <div>• Reformas borbónicas (1767 expulsión jesuitas, 1778 Libre Comercio).<br>• Invasiones inglesas 1806-1807.<br>• Vacío de poder 1808.<br>Todos estos factores explican el descontento criollo y las juntas de 1810.</div>
+    `);
+
+    // Línea de tiempo lateral
+    const timelineDiv = document.getElementById('timeline-list');
+    eventos.sort((a,b) => parseInt(a.fecha) - parseInt(b.fecha));
+    eventos.forEach(ev => {
+        const card = document.createElement('div');
+        card.className = 'timeline-event';
+        card.innerHTML = `
+            <div class="year"><i class="far fa-calendar-alt"></i> ${ev.fecha}</div>
+            <div class="title">${ev.titulo}</div>
+            <div class="location"><i class="fas fa-location-dot"></i> ${ev.lugar}</div>
+            <div style="font-size:0.7rem; margin-top:4px;">${ev.personajes.substring(0,70)}</div>
+        `;
+        card.addEventListener('click', () => {
+            const ref = markersRef[ev.id];
+            if (ref) {
+                map.setView(ref.coords, 7);
+                ref.marker.openPopup();
+            }
+        });
+        timelineDiv.appendChild(card);
+    });
+
+    // Rutas de campañas (líneas de conexión)
+    const rutas = [
+        [[10.4806,-66.9036], [4.7110,-74.0721]],  // Caracas - Bogotá
+        [[-34.6037,-58.3816], [-33.4489,-70.6693]], // Buenos Aires - Santiago
+        [[-33.4489,-70.6693], [-12.0464,-77.0428]]  // Santiago - Lima
+    ];
+    rutas.forEach(linea => {
+        L.polyline(linea, { color: '#b87333', weight: 2.5, opacity: 0.6, dashArray: '6, 8' }).addTo(map);
+    });
+
+    // Leyenda
+    const legend = L.control({ position: 'bottomleft' });
+    legend.onAdd = function() {
+        const div = L.DomUtil.create('div', 'legend-box');
+        div.innerHTML = `
+            <div style="background:#fff3e6; padding:6px 12px; border-radius:28px; font-size:12px; box-shadow:0 1px 4px rgba(0,0,0,0.2);">
+                <i class="fas fa-map-pin" style="color:#b87333;"></i> Evento clave<br>
+                <i class="fas fa-flag-checkered" style="color:#8b5a2b;"></i> Antecedentes<br>
+                <i class="fas fa-chronometer"></i> Línea discontinua: rutas independentistas
+            </div>
+        `;
+        return div;
+    };
+    legend.addTo(map);
+</script>
+</body>
+</html>
